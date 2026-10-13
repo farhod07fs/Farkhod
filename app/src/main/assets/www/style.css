@@ -101,3 +101,7 @@ input.answer.bad { border-color: var(--bad); background: var(--bad-bg); }
 .mistake { border-left: 4px solid var(--bad); }
 .mistake .your { color: var(--bad); }
 .mistake .right { color: var(--ok); }
+
+.explain { margin-top: 12px; border-left: 4px solid var(--accent); }
+.explain p { margin: 6px 0 0; white-space: pre-line; }
+.explain-title { font-weight: 700; color: var(--accent); font-size: 15px; text-transform: uppercase; letter-spacing: .04em; }

@@ -15,7 +15,7 @@ OUT = os.path.join(HERE, "..", "app", "src", "main", "assets", "www", "questions
 
 KEY = {
     "russian": """B D C C A A C A D C  C D D D C D D C C C  D C C A B A D B C C
-                  C B D B B C B B D B  D D A C C 4321 4213 3142 4531 3514""",
+                  C B D B B C B B D B  A D A C C 4321 4213 3142 4531 3514""",
     "literature": """B A A A A B B B C A  A B B B B D D C B B  A B D C C B B C A B
                      C C B C B A B D B A  B D A A D A 5124 3524 4152 5421 3152""",
     "tajik": """C A B C C D C D C A  B B A D B B C B D D  D A D A B C B C A D
@@ -55,24 +55,58 @@ LINES_SVG = """<svg viewBox="0 0 300 200" class="fig" role="img" aria-label="Р�
 <text x="0" y="175" stroke="none">4)</text><text x="40" y="157" stroke="none">Д</text><text x="270" y="157" stroke="none">М</text><line x1="40" y1="170" x2="280" y2="170"/><circle cx="280" cy="170" r="5"/>
 </g></svg>"""
 
-# Исправления текста, который в PDF был рисунком или потерял форматирование.
-FIX = {
-    ("botany", 16): {"text": "Совокупность растений определённой территории называется:"},
-    ("literature", 31): {"text": "В сказке «Царевна-лягушка» есть предложение: «Царь и все гости <u>диву дались</u>». Что означает подчёркнутое выражение:"},
-    ("math", 3): {"text": "Чему равен отрезок CB, если AB = 28 см, а AC = 19 см? (точка C лежит на отрезке AB)"},
-    ("math", 16): {"text": "Чему равен отрезок AC, если AB = 24 см и BC = 8 см? (точка C лежит на отрезке AB)"},
-    ("math", 27): {"text": "На рисунке изображён отрезок AB, точка C лежит на нём. Если AB = 44 см и BC = 14 см, то чему равен отрезок AC?"},
-    ("math", 7): {"text": "Укажите отрезок, луч и прямую линию.", "figure": LINES_SVG, "items": []},
-    ("math", 11): {"text": "Найдите периметр прямоугольника, если длина a = 12 см и ширина b = 8 см."},
-    ("math", 14): {"text": "Найдите периметр прямоугольника, если длина a = 14 см и ширина b = 7 см."},
-    ("math", 22): {"text": "Дан квадрат со стороной 12 см и прямоугольник со сторонами 8 см и 40 см. Найдите сумму площадей квадрата и прямоугольника.",
-                   "options": ["200 см³", "144 см²", "464 см²", "1040 см²"]},
-    ("math", 23): {"text": "Дан квадрат со стороной 13 см и прямоугольник со сторонами 11 см и 20 см. Найдите сумму площадей квадрата и прямоугольника.",
-                   "options": ["200 см³", "144 см²", "389 см²", "1040 см²"]},
-    ("math", 32): {"text": "Решить уравнение: (x + 15) – 8 = 17"},
-    ("math", 50): {"options": ["P = 2 · (a + b)", "S = a²", "P = 4 · a", "S = a · b"]},
-    ("math", 51): {"options": ["2 · 3² + 10", "3 · 2³ + 5²", "2 · 3² + 3 · 4³", "2² · 3²"]},
+def segment_svg(ac_part):
+    """Отрезок AB с точкой C, как на рисунке в сборнике."""
+    cx = 20 + round(260 * ac_part)
+    return f"""<svg viewBox="0 0 300 50" class="fig" role="img" aria-label="Рисунок к заданию">
+<g stroke="currentColor" stroke-width="2.5" fill="currentColor" font-size="15" font-family="serif">
+<text x="14" y="16" stroke="none">A</text><text x="{cx - 5}" y="16" stroke="none">C</text><text x="274" y="16" stroke="none">B</text>
+<line x1="20" y1="34" x2="280" y2="34"/><line x1="20" y1="26" x2="20" y2="42"/><line x1="{cx}" y1="26" x2="{cx}" y2="42"/><line x1="280" y1="26" x2="280" y2="42"/>
+</g></svg>"""
+
+
+def rects_svg(*rects):
+    """Прямоугольники с подписями сторон, как на рисунке в сборнике."""
+    parts, x = [], 4
+    for top, side in rects:
+        parts.append(f'<rect x="{x}" y="4" width="138" height="72" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>'
+                     f'<text x="{x + 14}" y="32">{top}</text><text x="{x + 14}" y="58">{side}</text>')
+        x += 154
+    return ('<svg viewBox="0 0 300 80" class="fig" role="img" aria-label="Рисунок к заданию">'
+            '<g fill="currentColor" font-size="14" font-family="sans-serif">' + "".join(parts) + "</g></svg>")
+
+
+# Рисунки из сборника. Подписи с рисунков pdftotext склеивает в строку текста —
+# её заменяем картинкой, сама формулировка вопроса остаётся дословной.
+FIGURES = {
+    ("math", 3): (1, segment_svg(19 / 28)),
+    ("math", 7): (1, LINES_SVG),
+    ("math", 11): (1, rects_svg(("a=12 см", "b=8 см"))),
+    ("math", 14): (1, rects_svg(("a=14 см", "b=7 см"))),
+    ("math", 16): (1, segment_svg(16 / 24)),
+    ("math", 22): (1, rects_svg(("12 см", "12 см"), ("8 см", "40 см"))),
+    ("math", 23): (1, rects_svg(("13 см", "13 см"), ("11 см", "20 см"))),
+    ("math", 27): (2, segment_svg(30 / 44)),
 }
+
+# Форматирование, которое теряется при извлечении текста (степени, подчёркивание).
+FORMAT = {
+    ("literature", 31): {"text": "В сказке «Царевна-лягушка» есть предложение: <u><i>«Царь и все гости диву дались»</i></u>. Что означает подчёркнутое выражение:"},
+    ("math", 22): {"options": ["200 см³", "144 см²", "464 см²", "1040 см²"]},
+    ("math", 23): {"options": ["200 см³", "144 см²", "389 см²", "1040 см²"]},
+    ("math", 50): {"options": ["𝑃 = 2 ∙ (𝑎 + 𝑏)", "𝑆 = 𝑎²", "𝑃 = 4 ∙ 𝑎", "𝑆 = 𝑎 ∙ 𝑏"]},
+    ("math", 51): {"options": ["2 ∙ 3² + 10", "3 ∙ 2³ + 5²", "2 ∙ 3² + 3 ∙ 4³", "2² ∙ 3²"]},
+}
+
+
+def load_explanations(sid):
+    path = os.path.join(HERE, "explanations", sid + ".txt")
+    res = {}
+    for line in open(path, encoding="utf-8"):
+        m = re.match(r"(\d+)\.\s+(.*)", line.strip())
+        if m:
+            res[int(m.group(1))] = m.group(2)
+    return res
 
 
 def clean(s):
@@ -86,14 +120,19 @@ def main():
     for subj in raw:
         sid = subj["id"]
         keys = KEY[sid].split()
+        expl = load_explanations(sid)
         qs = subj["questions"]
         assert len(keys) == len(qs), (sid, len(keys), len(qs))
         res = []
         for i, (q, k) in enumerate(zip(qs, keys), start=1):
-            q = dict(q, **FIX.get((sid, i), {}))
-            item = {"n": i, "text": clean(q["text"])}
-            if q.get("figure"):
-                item["figure"] = q["figure"]
+            q = dict(q, **FORMAT.get((sid, i), {}))
+            # n — порядковый номер (ключ), label — номер как в сборнике
+            item = {"n": i, "label": q["n"], "text": clean(q["text"])}
+            if (sid, i) in FIGURES:
+                keep, svg = FIGURES[(sid, i)]
+                item["text"] = "\n".join(item["text"].split("\n")[:keep])
+                item["figure"] = svg
+                q["items"] = []
             if k.startswith("="):
                 assert not q["options"], (sid, i)
                 item["type"] = "input"
@@ -111,6 +150,8 @@ def main():
                     item["text"] += "\n" + "\n".join(f"{j}) {clean(t)}" for j, t in enumerate(q["items"], 1))
                 item["options"] = [clean(o) for o in q["options"]]
                 item["answer"] = "ABCD".index(k)
+            assert i in expl, (sid, i, "нет пояснения")
+            item["explain"] = expl[i]
             if i in UNSURE.get(sid, ()):
                 item["unsure"] = True
             res.append(item)

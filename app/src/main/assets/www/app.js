@@ -31,7 +31,7 @@
   function esc(s) {
     return String(s).replace(/[&<>"]/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
-    }).replace(/&lt;(\/?)u&gt;/g, "<$1u>");
+    }).replace(/&lt;(\/?)([ui])&gt;/g, "<$1$2>");
   }
   function el(tag, cls, html) {
     var e = document.createElement(tag);
@@ -148,7 +148,7 @@
     view.innerHTML = "";
 
     var card = el("div", "card");
-    card.appendChild(el("div", "qnum", "Вопрос № " + q.n + (q.unsure ? " ⚠" : "")));
+    card.appendChild(el("div", "qnum", "Вопрос № " + q.label + (q.unsure ? " ⚠" : "")));
     card.appendChild(el("p", "qtext", esc(q.text)));
     if (q.figure) card.insertAdjacentHTML("beforeend", q.figure);
     view.appendChild(card);
@@ -175,12 +175,28 @@
     feedback.innerHTML = "";
     feedback.appendChild(el("p", "feedback " + (ok ? "ok" : "bad"),
       ok ? "✔ Верно!" : "✘ Неверно. Правильный ответ: " + esc(rightText)));
-    if (q.unsure) feedback.appendChild(el("p", "note", "⚠ Ответ на этот вопрос лучше уточнить у учителя."));
+    var box = explainBox(q);
+    if (ok) {
+      // при верном ответе разъяснение открывается по кнопке
+      box.hidden = true;
+      var show = el("button", "btn", "Показать разъяснение");
+      show.onclick = function () { box.hidden = false; show.remove(); };
+      feedback.appendChild(show);
+    }
+    feedback.appendChild(box);
     var last = quiz.pos === quiz.list.length - 1;
     var next = el("button", "btn primary", last ? "Показать результат" : "Следующий вопрос →");
     next.onclick = nextQuestion;
     feedback.appendChild(next);
     next.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  function explainBox(q) {
+    var box = el("div", "card explain");
+    box.appendChild(el("div", "explain-title", "Разъяснение"));
+    box.appendChild(el("p", "", esc(q.explain)));
+    if (q.unsure) box.appendChild(el("p", "note", "⚠ Ответ на этот вопрос лучше уточнить у учителя."));
+    return box;
   }
 
   function nextQuestion() {
@@ -300,10 +316,11 @@
       view.appendChild(el("h3", "", "Ошибки"));
       quiz.wrong.forEach(function (w) {
         var c = el("div", "card mistake");
-        c.innerHTML = '<div class="qnum">Вопрос № ' + w.q.n + "</div>" +
+        c.innerHTML = '<div class="qnum">Вопрос № ' + w.q.label + "</div>" +
           '<p class="qtext">' + esc(w.q.text) + "</p>" +
           '<div class="your">Ваш ответ: ' + esc(w.your) + "</div>" +
-          '<div class="right">Правильно: ' + esc(w.right) + "</div>";
+          '<div class="right">Правильно: ' + esc(w.right) + "</div>" +
+          '<p class="muted">' + esc(w.q.explain) + "</p>";
         view.appendChild(c);
       });
     }
