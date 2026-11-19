@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 rootProject.name = "SchoolTests"
 include(":app")
 include(":vilenkin")
+include(":chetvert2")
